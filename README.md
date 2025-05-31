@@ -5,11 +5,15 @@ Consumer consumes messages from the source topic, while producer produces them i
 
 ## Run locally
 
-1. Launch Kafka
+1. Generate certificates
+```bash
+bash scripts/cert-generator.sh
+```
+2. Launch Kafka using docker compose
 ```bash
 docker-compose up
 ```
-2. Run code
+3. Run kafka exporter
 ```bash
 go run main.go
 ```
