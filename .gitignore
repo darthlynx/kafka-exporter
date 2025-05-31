@@ -1,1 +1,6 @@
 certs/
+*.p12
+*.crt
+*.csr
+*.pem
+
