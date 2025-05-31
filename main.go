@@ -44,24 +44,24 @@ func main() {
 	groupID := "my-group"
 
 	// TLS setup
-	// tlsConfig, err := createTLSConfig("ca.pem", "client.pem", "client.key")
-	// if err != nil {
-	// 	log.Fatalf("TLS config error: %v", err)
-	// }
+	tlsConfig, err := createTLSConfig("certs/ca.crt", "certs/client.crt", "certs/client.key")
+	if err != nil {
+		log.Fatalf("TLS config error: %v", err)
+	}
 
 	// Kafka dialer with TLS
-	// dialer := &kafka.Dialer{
-	// 	Timeout:   10 * time.Second,
-	// 	TLS:       tlsConfig,
-	// 	DualStack: true,
-	// }
+	dialer := &kafka.Dialer{
+		Timeout:   10 * time.Second,
+		TLS:       tlsConfig,
+		DualStack: true,
+	}
 
 	// Reader setup
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: brokers,
 		GroupID: groupID,
 		Topic:   sourceTopic,
-		// Dialer:            dialer,
+		Dialer:            dialer,
 		MinBytes:          1,
 		MaxBytes:          10e6,              // 10MB
 		StartOffset:       kafka.FirstOffset, // earliest
@@ -76,7 +76,7 @@ func main() {
 		Addr:     kafka.TCP(brokers...),
 		Topic:    destTopic,
 		Balancer: &kafka.Hash{}, // partition by key
-		// Transport:    &kafka.Transport{TLS: tlsConfig},
+		Transport:    &kafka.Transport{TLS: tlsConfig},
 		RequiredAcks: kafka.RequireAll,
 		Async:        false,
 	}

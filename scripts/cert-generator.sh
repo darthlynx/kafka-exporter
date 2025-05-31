@@ -89,6 +89,13 @@ keytool -importcert -file clientchain.crt -keystore client.ks.p12 \
 -storepass $PASSWORD -keypass $PASSWORD -alias client \
 -storetype PKCS12 -noprompt
 
+## 5. extract client cert, key and CA in pem format
+## because segmentio/kafka-go uses crypto/tls which does not support .p12
+
+openssl pkcs12 -in client.ks.p12 -clcerts -nokeys -out client.crt -passin pass:$PASSWORD
+openssl pkcs12 -in client.ks.p12 -nocerts -nodes -out client.key -passin pass:$PASSWORD
+openssl pkcs12 -in client.ts.p12 -cacerts -nokeys -out ca.crt -passin pass:$PASSWORD
+
 # VII. Add client CA certificate to broker's trust store
 
 keytool -import -file client.ca.crt -keystore server.ts.p12 -alias client \

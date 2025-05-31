@@ -15,6 +15,13 @@ services:
       - ./certs:/etc/kafka/secrets # mount certs into container
     environment:
       KAFKA_NODE_ID: 1
+      KAFKA_SOCKET_REQUEST_MAX_BYTES: 500000000
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
 
       # Listeners
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,SSL:SSL,CONTROLLER:PLAINTEXT
@@ -39,13 +46,6 @@ services:
 
       # Enable SSL for clients
       KAFKA_SSL_CLIENT_AUTH: required
-
-      # Schema Registry will use PLAINTEXT internally
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_JMX_PORT: 9101
-      KAFKA_JMX_HOSTNAME: localhost
 
   schema-registry:
     image: confluentinc/cp-schema-registry:7.9.0
