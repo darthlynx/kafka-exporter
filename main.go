@@ -37,31 +37,27 @@ func createTLSConfig(caFile, certFile, keyFile string) (*tls.Config, error) {
 	}, nil
 }
 
-func main() {
-	// Settings
-	brokers := []string{"localhost:9093"} // TLS is listened on the 9093 port in this setup
-	sourceTopic := "source-topic"
-	destTopic := "destination-topic"
-	groupID := "my-group"
+type Config struct {
+	Brokers          []string
+	SourceTopic      string
+	DestinationTopic string
+	GroupID          string
+	TLSConfig        *tls.Config
+}
 
-	// TLS setup
-	tlsConfig, err := createTLSConfig("certs/ca.crt", "certs/client.crt", "certs/client.key")
-	if err != nil {
-		log.Fatalf("TLS config error: %v", err)
-	}
-
+func RunExporter(ctx context.Context, config Config) error {
 	// Kafka dialer with TLS
 	dialer := &kafka.Dialer{
 		Timeout:   10 * time.Second,
-		TLS:       tlsConfig,
+		TLS:       config.TLSConfig,
 		DualStack: true,
 	}
 
 	// Consumer setup
 	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:           brokers,
-		GroupID:           groupID,
-		Topic:             sourceTopic,
+		Brokers:           config.Brokers,
+		GroupID:           config.GroupID,
+		Topic:             config.SourceTopic,
 		Dialer:            dialer,
 		MinBytes:          1,
 		MaxBytes:          10e6,              // 10MB
@@ -74,59 +70,76 @@ func main() {
 
 	// Producer setup
 	writer := &kafka.Writer{
-		Addr:         kafka.TCP(brokers...),
-		Topic:        destTopic,
+		Addr:         kafka.TCP(config.Brokers...),
+		Topic:        config.DestinationTopic,
 		Balancer:     &kafka.Hash{}, // partition by key
-		Transport:    &kafka.Transport{TLS: tlsConfig},
+		Transport:    &kafka.Transport{TLS: config.TLSConfig},
 		RequiredAcks: kafka.RequireAll,
 		Async:        false,
 	}
 	defer writer.Close()
 
+	for {
+		msg, err := reader.FetchMessage(ctx)
+		if err != nil {
+			if ctx.Err() != nil {
+				log.Println("Consumer loop stopped")
+				return nil
+			}
+			log.Printf("Failed to fetch message: %v", err)
+			continue
+		}
+
+		log.Printf("Received message: key=%s value=%s", string(msg.Key), string(msg.Value))
+
+		// Write to destination topic
+		err = writer.WriteMessages(ctx, kafka.Message{
+			Key:   msg.Key,
+			Value: msg.Value,
+			Time:  msg.Time, // preserve timestamp (could be excluded)
+		})
+		if err != nil {
+			log.Printf("Failed to write message: %v", err)
+			continue
+		}
+
+		// Manually commit offset
+		if err := reader.CommitMessages(ctx, msg); err != nil {
+			log.Printf("Failed to commit offset: %v", err)
+		}
+	}
+}
+
+func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	sigchan := make(chan os.Signal, 1)
 	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
-
+	// Wait for signal
 	go func() {
-		for {
-			msg, err := reader.FetchMessage(ctx)
-			if err != nil {
-				if ctx.Err() != nil {
-					log.Println("Consumer loop stopped")
-					return
-				}
-				log.Printf("Failed to fetch message: %v", err)
-				continue
-			}
-
-			log.Printf("Received message: key=%s value=%s", string(msg.Key), string(msg.Value))
-
-			// Write to destination topic
-			err = writer.WriteMessages(ctx, kafka.Message{
-				Key:   msg.Key,
-				Value: msg.Value,
-				Time:  msg.Time, // preserve timestamp (could be excluded)
-			})
-			if err != nil {
-				log.Printf("Failed to write message: %v", err)
-				continue
-			}
-
-			// Manually commit offset
-			if err := reader.CommitMessages(ctx, msg); err != nil {
-				log.Printf("Failed to commit offset: %v", err)
-			}
-		}
+		sig := <-sigchan
+		log.Printf("Received signal: %v. Shutting down...", sig)
+		cancel()
 	}()
 
-	// Wait for signal
-	sig := <-sigchan
-	log.Printf("Received signal: %v. Shutting down...", sig)
-	cancel()
+	// TLS setup
+	tlsConfig, err := createTLSConfig("certs/ca.crt", "certs/client.crt", "certs/client.key")
+	if err != nil {
+		log.Fatalf("TLS config error: %v", err)
+	}
 
-	// Let goroutine finish
-	time.Sleep(2 * time.Second)
-	log.Println("Graceful shutdown complete.")
+	conf := Config{
+		Brokers:          []string{"localhost:9093"}, // TLS is listened on the 9093 port in this setup
+		SourceTopic:      "source-topic",
+		DestinationTopic: "destination-topic",
+		GroupID:          "my-group",
+		TLSConfig:        tlsConfig,
+	}
+
+	if err := RunExporter(ctx, conf); err != nil {
+		log.Fatalf("Exporter error: %v", err)
+	}
+
+	log.Println("Shutdown complete")
 }
