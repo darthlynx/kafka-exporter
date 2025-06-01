@@ -31,14 +31,15 @@ func createTLSConfig(caFile, certFile, keyFile string) (*tls.Config, error) {
 	}
 
 	return &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		RootCAs:      caCertPool,
+		Certificates:       []tls.Certificate{cert},
+		RootCAs:            caCertPool,
+		InsecureSkipVerify: true, // Skip hostname verification. For local development only
 	}, nil
 }
 
 func main() {
 	// Settings
-	brokers := []string{"localhost:9092"}
+	brokers := []string{"localhost:9093"} // TLS is listened on the 9093 port in this setup
 	sourceTopic := "source-topic"
 	destTopic := "destination-topic"
 	groupID := "my-group"
@@ -56,11 +57,11 @@ func main() {
 		DualStack: true,
 	}
 
-	// Reader setup
+	// Consumer setup
 	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers: brokers,
-		GroupID: groupID,
-		Topic:   sourceTopic,
+		Brokers:           brokers,
+		GroupID:           groupID,
+		Topic:             sourceTopic,
 		Dialer:            dialer,
 		MinBytes:          1,
 		MaxBytes:          10e6,              // 10MB
@@ -71,11 +72,11 @@ func main() {
 	})
 	defer reader.Close()
 
-	// Writer setup
+	// Producer setup
 	writer := &kafka.Writer{
-		Addr:     kafka.TCP(brokers...),
-		Topic:    destTopic,
-		Balancer: &kafka.Hash{}, // partition by key
+		Addr:         kafka.TCP(brokers...),
+		Topic:        destTopic,
+		Balancer:     &kafka.Hash{}, // partition by key
 		Transport:    &kafka.Transport{TLS: tlsConfig},
 		RequiredAcks: kafka.RequireAll,
 		Async:        false,
@@ -100,14 +101,13 @@ func main() {
 				continue
 			}
 
-			// Log message info
 			log.Printf("Received message: key=%s value=%s", string(msg.Key), string(msg.Value))
 
 			// Write to destination topic
 			err = writer.WriteMessages(ctx, kafka.Message{
 				Key:   msg.Key,
 				Value: msg.Value,
-				Time:  msg.Time, // preserve timestamp
+				Time:  msg.Time, // preserve timestamp (could be excluded)
 			})
 			if err != nil {
 				log.Printf("Failed to write message: %v", err)

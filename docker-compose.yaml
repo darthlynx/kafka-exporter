@@ -14,6 +14,7 @@ services:
     volumes:
       - ./certs:/etc/kafka/secrets # mount certs into container
     environment:
+      KAFKA_HEAP_OPTS: "-Xms512M -Xmx2G"
       KAFKA_NODE_ID: 1
       KAFKA_SOCKET_REQUEST_MAX_BYTES: 500000000
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1

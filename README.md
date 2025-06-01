@@ -20,6 +20,13 @@ go run main.go
 
 ## Useful commands:
 
+Login into the kafka container:
+```bash
+docker exec -it broker bash
+```
+
+Now you can execute the next commands:
+
 ```bash
 # list topics
 kafka-topics --bootstrap-server localhost:9092 --list
@@ -29,7 +36,7 @@ kafka-topics --bootstrap-server localhost:9092 --create --topic source-topic --p
 kafka-topics --bootstrap-server localhost:9092 --create --topic destination-topic --partitions 1 --replication-factor 1
 
 # produce messages
-kafka-console-producer --bootstrap-server localhost:9092 --topic my-topic --property "parse.key=true" --property "key.separator=:"
+kafka-console-producer --bootstrap-server localhost:9092 --topic source-topic --property parse.key=true --property key.separator=:
 
 # consume messages
 kafka-console-consumer --bootstrap-server localhost:9092 --topic destination-topic --from-beginning --property print.key=true --property key.separator=:
