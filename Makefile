@@ -1,4 +1,3 @@
-# Makefile for a Go project
 # Usage: make <target>
 # Override with: make BINARY=myname GO=go1.24
 
