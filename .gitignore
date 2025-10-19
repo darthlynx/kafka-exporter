@@ -4,3 +4,5 @@ certs/
 *.csr
 *.pem
 
+# exclude binaries
+bin/

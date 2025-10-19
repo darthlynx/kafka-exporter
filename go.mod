@@ -1,4 +1,4 @@
-module github.com/ihorkhlaponin/kafka-exporter
+module github.com/darthlynx/kafka-exporter
 
 go 1.24.2
 

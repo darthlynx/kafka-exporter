@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/ihorkhlaponin/kafka-exporter/internal/exporter"
-	"github.com/ihorkhlaponin/kafka-exporter/internal/tlsconfig"
+	"github.com/darthlynx/kafka-exporter/internal/exporter"
+	"github.com/darthlynx/kafka-exporter/internal/tlsconfig"
 )
 
 func main() {
