@@ -9,7 +9,7 @@ import (
 )
 
 // Message is a kafka-agnostic message used by the exporter.
-// Commit() will commit the underlying offset when supported by the client.
+// CommitFunc() will commit the underlying offset when supported by the client.
 type Message struct {
 	Key   []byte
 	Value []byte
@@ -18,7 +18,7 @@ type Message struct {
 	CommitFunc func(context.Context) error
 }
 
-// Commit commits the message offset (no-op if not supported).
+// Commit commits the message offset (does nothing if not supported).
 func (m Message) Commit(ctx context.Context) error {
 	if m.CommitFunc == nil {
 		return nil
@@ -26,19 +26,17 @@ func (m Message) Commit(ctx context.Context) error {
 	return m.CommitFunc(ctx)
 }
 
-// Consumer is the subset used by the exporter.
+// Consumer is the Kafka Consumer interface used by the exporter.
 type Consumer interface {
 	FetchMessage(ctx context.Context) (Message, error)
 	Close() error
 }
 
-// Producer is the subset used by the exporter.
+// Producer is the Kafka Producer interface used by the exporter.
 type Producer interface {
 	WriteMessages(ctx context.Context, msgs ...Message) error
 	Close() error
 }
-
-// --- kafka-go adapters (hidden behind the package) ---
 
 type kafkaConsumer struct {
 	r *kafka.Reader

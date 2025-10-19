@@ -119,7 +119,7 @@ func TestRun_ProcessesMessagesAndStopsOnCancel(t *testing.T) {
 	}
 	producer.mu.Unlock()
 
-	// ensure commit was invoked
+	// check that commit was invoked
 	if atomic.LoadInt32(&committed) != 1 {
 		t.Fatalf("expected message commit to be called")
 	}
