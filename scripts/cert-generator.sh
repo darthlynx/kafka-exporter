@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CERT_DIR="../certs"
+CERT_DIR="certs"
 PASSWORD=changeit  # do not use in production! for testing only!
 
 echo "Creating certs in: $CERT_DIR"

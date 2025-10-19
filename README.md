@@ -15,7 +15,7 @@ docker-compose up
 ```
 3. Run kafka exporter
 ```bash
-go run main.go
+go run cmd/kafka-exporter/main.go
 ```
 
 ## Useful commands:

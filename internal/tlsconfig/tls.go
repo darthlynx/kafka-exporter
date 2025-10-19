@@ -9,7 +9,7 @@ import (
 
 // New builds a TLS config using provided CA + client cert/key.
 // InsecureSkipVerify is enabled for local development; make configurable if needed.
-func New(caFile, certFile, keyFile string) (*tls.Config, error) {
+func New(caFile, certFile, keyFile string, insecureSkipVerify bool) (*tls.Config, error) {
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load client cert and key: %w", err)
@@ -28,6 +28,6 @@ func New(caFile, certFile, keyFile string) (*tls.Config, error) {
 	return &tls.Config{
 		Certificates:       []tls.Certificate{cert},
 		RootCAs:            caCertPool,
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: insecureSkipVerify,
 	}, nil
 }

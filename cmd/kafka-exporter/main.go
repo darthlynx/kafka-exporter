@@ -8,7 +8,6 @@ import (
 	"syscall"
 
 	"github.com/darthlynx/kafka-exporter/internal/exporter"
-	"github.com/darthlynx/kafka-exporter/internal/tlsconfig"
 )
 
 func main() {
@@ -23,17 +22,9 @@ func main() {
 		cancel()
 	}()
 
-	tlsCfg, err := tlsconfig.New("certs/ca.crt", "certs/client.crt", "certs/client.key")
+	conf, err := exporter.LoadConfigFromEnv()
 	if err != nil {
-		log.Fatalf("TLS config error: %v", err)
-	}
-
-	conf := exporter.Config{
-		Brokers:          []string{"localhost:9093"},
-		SourceTopic:      "source-topic",
-		DestinationTopic: "destination-topic",
-		GroupID:          "my-group",
-		TLSConfig:        tlsCfg,
+		log.Fatalf("config error: %v", err)
 	}
 
 	if err := exporter.Run(ctx, conf); err != nil {

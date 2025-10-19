@@ -6,6 +6,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/darthlynx/kafka-exporter/internal/tlsconfig"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -15,6 +17,37 @@ type Config struct {
 	DestinationTopic string
 	GroupID          string
 	TLSConfig        *tls.Config
+}
+
+// LoadConfigFromEnv loads exporter configuration from environment variables.
+func LoadConfigFromEnv() (Config, error) {
+	var spec struct {
+		Brokers            []string `envconfig:"KAFKA_BROKERS" default:"localhost:9093"`
+		SourceTopic        string   `envconfig:"SOURCE_TOPIC" default:"source-topic"`
+		DestinationTopic   string   `envconfig:"DESTINATION_TOPIC" default:"destination-topic"`
+		GroupID            string   `envconfig:"GROUP_ID" default:"exporter-group"`
+		CAFile             string   `envconfig:"TLS_CA_FILE" default:"certs/ca.crt"`
+		CertFile           string   `envconfig:"TLS_CERT_FILE" default:"certs/client.crt"`
+		KeyFile            string   `envconfig:"TLS_KEY_FILE" default:"certs/client.key"`
+		InsecureSkipVerify bool     `envconfig:"TLS_INSECURE_SKIP_VERIFY" default:"true"`
+	}
+
+	if err := envconfig.Process("", &spec); err != nil {
+		return Config{}, err
+	}
+
+	tlsCfg, err := tlsconfig.New(spec.CAFile, spec.CertFile, spec.KeyFile, spec.InsecureSkipVerify)
+	if err != nil {
+		return Config{}, err
+	}
+
+	return Config{
+		Brokers:          spec.Brokers,
+		SourceTopic:      spec.SourceTopic,
+		DestinationTopic: spec.DestinationTopic,
+		GroupID:          spec.GroupID,
+		TLSConfig:        tlsCfg,
+	}, nil
 }
 
 // Run runs the exporter: consumes from SourceTopic and writes to DestinationTopic.
