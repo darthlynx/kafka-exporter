@@ -1,7 +1,12 @@
-# kafka exporter
+# kafka data exporter
 
-Simple consumer-producer pair.
-Consumer consumes messages from the source topic, while producer produces them into the destination topic.
+Simple consumer-producer pair which consumes messages from the source topic and produces them into the destination topic.
+
+## Build project
+
+```bash
+make build
+```
 
 ## Run locally
 
@@ -16,6 +21,9 @@ docker-compose up
 3. Run kafka exporter
 ```bash
 go run cmd/kafka-exporter/main.go
+
+# alternatively, run compiled binary
+bin/kafka-exporter
 ```
 
 ## Useful commands:

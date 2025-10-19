@@ -1,3 +1,4 @@
+# ignore generated certs
 certs/
 *.p12
 *.crt
