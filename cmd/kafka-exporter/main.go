@@ -31,7 +31,7 @@ func main() {
 	}
 
 	slog.Info("Starting exporter", "source_topic", conf.SourceTopic, "destination_topic", conf.DestinationTopic)
-	if err := exporter.Run(ctx, conf); err != nil {
+	if err := exporter.RunWithConfig(ctx, conf); err != nil {
 		slog.Error("Exporter error", "err", err)
 		os.Exit(1)
 	}
