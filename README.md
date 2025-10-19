@@ -8,6 +8,14 @@ Simple consumer-producer pair which consumes messages from the source topic and 
 make build
 ```
 
+This command will generate the `kafka-exporter` binary in the `bin/` folder
+
+## Run tests
+
+```bash
+make test
+```
+
 ## Run locally
 
 1. Generate certificates
