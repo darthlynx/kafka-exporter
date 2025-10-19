@@ -3,11 +3,12 @@ package exporter
 import (
 	"context"
 	"crypto/tls"
-	"log"
 	"time"
 
-	"github.com/darthlynx/kafka-exporter/internal/tlsconfig"
+	"log/slog"
+
 	"github.com/kelseyhightower/envconfig"
+	"github.com/darthlynx/kafka-exporter/internal/tlsconfig"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -72,7 +73,7 @@ func Run(ctx context.Context, config Config) error {
 	})
 	defer func() {
 		if err := reader.Close(); err != nil {
-			log.Printf("Failed to close reader: %v", err)
+			slog.Error("Failed to close reader", "err", err)
 		}
 	}()
 
@@ -86,7 +87,7 @@ func Run(ctx context.Context, config Config) error {
 	}
 	defer func() {
 		if err := writer.Close(); err != nil {
-			log.Printf("Failed to close writer: %v", err)
+			slog.Error("Failed to close writer", "err", err)
 		}
 	}()
 
@@ -94,26 +95,26 @@ func Run(ctx context.Context, config Config) error {
 		msg, err := reader.FetchMessage(ctx)
 		if err != nil {
 			if ctx.Err() != nil {
-				log.Println("Consumer loop stopped")
+				slog.Info("Consumer loop stopped")
 				return nil
 			}
-			log.Printf("Failed to fetch message: %v", err)
+			slog.Error("Failed to fetch message", "err", err)
 			continue
 		}
 
-		log.Printf("Received message: key=%s value=%s", string(msg.Key), string(msg.Value))
+		slog.Info("Received message", "key", string(msg.Key), "value", string(msg.Value))
 
 		if err = writer.WriteMessages(ctx, kafka.Message{
 			Key:   msg.Key,
 			Value: msg.Value,
 			Time:  msg.Time,
 		}); err != nil {
-			log.Printf("Failed to write message: %v", err)
+			slog.Error("Failed to write message", "err", err)
 			continue
 		}
 
 		if err := reader.CommitMessages(ctx, msg); err != nil {
-			log.Printf("Failed to commit offset: %v", err)
+			slog.Error("Failed to commit offset", "err", err)
 		}
 	}
 }

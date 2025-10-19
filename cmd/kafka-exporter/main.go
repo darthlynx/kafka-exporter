@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,18 +18,21 @@ func main() {
 	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		sig := <-sigchan
-		log.Printf("Received signal: %v. Shutting down...", sig)
+		slog.Info("Received signal. Shutting down...", "signal", sig)
 		cancel()
 	}()
 
+	slog.Info("Starting the app")
 	conf, err := exporter.LoadConfigFromEnv()
 	if err != nil {
-		log.Fatalf("config error: %v", err)
+		slog.Error("config error", "err", err)
+		os.Exit(1)
 	}
 
 	if err := exporter.Run(ctx, conf); err != nil {
-		log.Fatalf("Exporter error: %v", err)
+		slog.Error("Exporter error", "err", err)
+		os.Exit(1)
 	}
 
-	log.Println("Shutdown complete")
+	slog.Info("Shutdown complete")
 }
